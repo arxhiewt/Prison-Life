@@ -1,1 +1,293 @@
-loadstring("\112\114\105\110\116\40\34\32\89\79\85\82\32\83\67\82\73\80\84\32\72\69\82\69\33\33\32\34\41\10")()
+--This script was modified and developed by Arxhiewt.
+--[Note: The premium script is a separate script that will NOT be open-sourced.]
+
+-- // Constants \\ --
+-- [ Services ] --
+local Services = setmetatable({}, {__index = function(Self, Index)
+local NewService = game.GetService(game, Index)
+if NewService then
+Self[Index] = NewService
+end
+return NewService
+end})
+
+-- [ Modules ] --
+local UserInterface = loadstring(game:HttpGet("https://raw.githubusercontent.com/icuck/collection-dump/main/AbstractUI", true))()
+local Drawing = loadstring(game:HttpGet("https://raw.githubusercontent.com/iHavoc101/Genesis-Studios/main/Modules/DrawingAPI.lua", true))()
+
+local ToolTip = require(Services.ReplicatedStorage.Modules_client.TooltipModule)
+
+-- [ LocalPlayer ] --
+local LocalPlayer = Services.Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- [ Raycast Parameters ] --
+local RaycastParameters = RaycastParams.new()
+RaycastParameters.IgnoreWater = true
+RaycastParameters.FilterType = Enum.RaycastFilterType.Blacklist
+RaycastParameters.FilterDescendantsInstances = {LocalPlayer.Character}
+
+-- // Variables \\ --
+-- [ Info ] --
+local Info = {
+   SilentAIMEnabled = false;
+   TriggeredEnabled = false;
+   ArmsCheckEnabled = true;
+   TeamWhitelist = "";
+   FieldOfView = 250;
+}
+
+local LastArrest = time()
+
+-- [ Interface ] --
+local FOVCircle = Drawing.new("Circle", {
+   Thickness = 1.0,
+   Color = Color3.fromRGB(0, 0, 0),
+   NumSides = 25,
+   Radius = _G.FOV
+})
+
+local Target = Drawing.new("Triangle", {
+   Thickness = 2,
+   Color = Color3.fromRGB(255, 0, 0)
+})
+
+-- [ Weapons ] --
+local Weapons = {
+   "Remington 870";
+   "AK-47";
+   "M9";
+   "M4A1";
+   "Hammer";
+   "Crude Knife";
+}
+
+-- [ Metatable ] --
+local RawMetatable = getrawmetatable(game)
+local __NameCall = RawMetatable.__namecall
+local __Index = RawMetatable.__index
+
+
+-- // Functions \\ --
+local function ValidCharacter(Character)
+   return Character and (Character.FindFirstChildWhichIsA(Character, "Humanoid") and Character.FindFirstChildWhichIsA(Character, "Humanoid").Health ~= 0) or false
+end
+
+local function NotObstructing(Destination, Ancestor)
+   -- [ Camera ] --
+   local ObstructingParts = Camera.GetPartsObscuringTarget(Camera, {Destination}, {Ancestor, LocalPlayer.Character})
+
+   for i,v in ipairs(ObstructingParts) do
+       pcall(function()
+           if v.Transparency >= 1 then
+               table.remove(ObstructingParts, i)
+           end
+       end)
+   end
+
+   if #ObstructingParts <= 0 then
+       return true
+   end
+
+   -- [ Raycast ] --
+   RaycastParameters.FilterDescendantsInstances = {LocalPlayer.Character}
+
+   local Origin = Camera.CFrame.Position
+   local Direction = (Destination - Origin).Unit * 500
+   local RayResult = workspace.Raycast(workspace, Origin, Direction, RaycastParameters) or {
+       Instance = nil;
+       Position = Origin + Direction;
+       Material = Enum.Material.Air;
+   }
+
+   if RayResult.Instance and (RayResult.Instance.IsDescendantOf(RayResult.Instance, Ancestor) or RayResult.Instance == Ancestor) then
+       return true
+   end
+
+   -- [ Obstructed ] --
+   return false
+end
+
+local function IsArmed(Player)
+   for i,v in ipairs(Weapons) do
+       local Tool = Player.Backpack.FindFirstChild(Player.Backpack, v) or Player.Character.FindFirstChild(Player.Character, v)
+       if Tool then
+           return true
+       end
+   end
+   return false
+end
+
+local function ClosestPlayerToCursor(Distance)
+   local Closest = nil
+   local Position = nil
+   local ShortestDistance = Distance or math.huge
+
+   local MousePosition = Services.UserInputService.GetMouseLocation(Services.UserInputService)
+
+   for i, v in ipairs(Services.Players.GetPlayers(Services.Players)) do
+       if v ~= LocalPlayer and (v.Team ~= LocalPlayer.Team and tostring(v.Team) ~= Info.TeamWhitelist) and ValidCharacter(v.Character) then
+           if Info.ArmsCheckEnabled and (v.Team == Services.Teams.Inmates and IsArmed(v) == false) then
+               continue
+           end
+
+           local ViewportPosition, OnScreen = Camera.WorldToViewportPoint(Camera, v.Character.PrimaryPart.Position)
+           local Magnitude = (Vector2.new(ViewportPosition.X, ViewportPosition.Y) - MousePosition).Magnitude
+
+           if OnScreen == false or NotObstructing(v.Character.PrimaryPart.Position, v.Character) == false then
+               continue
+           end
+
+           if Magnitude < ShortestDistance  then
+               Closest = v
+               Position = ViewportPosition
+               ShortestDistance = Magnitude
+           end
+       end
+   end
+
+   return Closest, Position
+end
+
+local function SwitchGuns()
+   if LocalPlayer.Character.FindFirstChild(LocalPlayer.Character, "Remington 870") then
+       local Tool = LocalPlayer.Backpack.FindFirstChild(LocalPlayer.Backpack, "M4A1") or LocalPlayer.Backpack.FindFirstChild(LocalPlayer.Backpack, "AK-47") or LocalPlayer.Backpack.FindFirstChild(LocalPlayer.Backpack, "M9")
+
+       local Humanoid = LocalPlayer.Character.FindFirstChildWhichIsA(LocalPlayer.Character, "Humanoid")
+       Humanoid.EquipTool(Humanoid, Tool)
+   else
+       local Tool = LocalPlayer.Backpack.FindFirstChild(LocalPlayer.Backpack, "Remington 870")
+
+       local Humanoid = LocalPlayer.Character.FindFirstChildWhichIsA(LocalPlayer.Character, "Humanoid")
+       Humanoid.EquipTool(Humanoid, Tool)
+   end
+end
+
+local function Crash(Gun, BulletCount, ShotCount)
+   local ShootEvent = Services.ReplicatedStorage.ShootEvent
+   local StartTime = time()
+   local BulletTable = {}
+
+   for i = 1, BulletCount do
+       BulletTable[i] = {
+           Cframe = CFrame.new(),
+           Distance = math.huge
+       }
+   end
+   for i = 1, ShotCount do
+       ShootEvent:FireServer(BulletTable, Gun)
+       if time() - StartTime > 5 then
+           break
+       end
+   end
+end
+
+-- // User Interface \\ --
+-- [ Window ] --
+local Window = UserInterface.new("Prison Life", UDim2.new(0, 420, 0, 420))
+
+Window:Divider("Status")
+
+Window:Button("Working & Updated", "11/08/24", function()
+   setclipboard("11/08/24")
+end)
+
+
+-- [ Assists ] --
+Window:Divider("Functions")
+
+Window:Toggle("Silent Aim", "Use with Checker", false, function(State)
+   Info.SilentAIMEnabled = State
+end)
+
+
+Window:Slider("Slient Aim Circle", "Must enable Slient Aim", 50, 500, 250, function(Value)
+   Info.FieldOfView = Value
+end)
+
+
+Window:Toggle("Checker", "Checks Inmates & Criminals For Weapons", false, function(State)
+   Info.ArmsCheckEnabled = State
+end)
+
+    
+-- [ Misc ] --
+Window:Divider("Premium Functions")
+
+Window:Dropdown("Whitelists", "Slient Aim will not attack the selected team", {"Guards", "Inmates", "Criminals"}, function(Value)
+   Info.TeamWhitelist = Value
+end)
+
+Window:Button("FE Server Crash [M9]", "Function disabled; PREMIUM FEATURE", function()
+
+    end)
+
+Window:Button("FE Ear Rape", "Function disabled; PREMIUM FEATURE", function()
+
+    end)
+
+Window:Button("FE Anti Crash", "Function disabled; PREMIUM FEATURE", function()
+
+    end)
+
+Window:Dropdown("FE Kick", "Kick any player that is using Tiger Admin", {"Function disabled; PREMIUM FEATURE", "Function disabled; PREMIUM FEATURE", "Function disabled; PREMIUM FEATURE"}, function(Value)
+   Info.TeamWhitelist = Value
+end)
+
+Window:Divider("Developer & Credits")
+
+Window:Button("Arxhiewt", "Click To Copy Discord Username", function()
+   setclipboard("highuntilfailure")
+end)
+
+
+-- // Metatable \\ --
+setreadonly(RawMetatable, false)
+
+RawMetatable.__index = newcclosure(function(Self, Index)
+   if Info.SilentAIMEnabled == true and checkcaller() == false then
+       if typeof(Self) == "Instance" and (Self:IsA("PlayerMouse") or Self:IsA("Mouse")) then
+           if Index == "Hit" then
+               local Closest = ClosestPlayerToCursor(Info.FieldOfView)
+               if Closest then
+                   local Velocity = Closest.Character.PrimaryPart.AssemblyLinearVelocity
+                   local Prediction = Velocity.Unit
+                   if Velocity.Magnitude == 0 then
+                       Prediction = Vector3.new(0, 0, 0)
+                   end
+                   return CFrame.new(Closest.Character.Head.Position + Prediction)
+               end
+           end
+       end
+   end
+
+   return __Index(Self, Index)
+end)
+
+
+setreadonly(RawMetatable, true)
+
+-- // Event Listeners \\ --
+Services.RunService.RenderStepped:Connect(function()
+   if Info.SilentAIMEnabled == true then
+       -- FOV --
+       FOVCircle.Visible = true
+       FOVCircle.Radius = Info.FieldOfView
+       FOVCircle.Position = Services.UserInputService:GetMouseLocation()
+
+       -- Target --
+       local Closest, Position = ClosestPlayerToCursor(Info.FieldOfView)
+       if Closest then
+           Target.PointA = Vector2.new(Position.X - 25, Position.Y + 25)
+           Target.PointB = Vector2.new(Position.X + 25, Position.Y + 25)
+           Target.PointC = Vector2.new(Position.X, Position.Y - 25)
+           if Info.TriggeredEnabled and not Services.UserInputService:IsKeyDown(Enum.KeyCode.G) then
+               mouse1click()
+           end
+       end
+       Target.Visible = Closest ~= nil
+   else
+       FOVCircle.Visible = false
+       Target.Visible = false
+   end
+end)
