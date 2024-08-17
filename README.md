@@ -1,4 +1,3 @@
-This script was modified and developed by Arxhiewt.
-[Note: The premium script is a separate script that will NOT be open-sourced.]
+developed and modified by me!
 
 Script: `loadstring(game:HttpGet("https://raw.githubusercontent.com/arxhiewt/Prison-Life/main/Slient-Aim",true))()`
