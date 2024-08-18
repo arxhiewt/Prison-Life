@@ -234,10 +234,10 @@ Window:Dropdown("FE Kick", "Kick any player that is using Tiger Admin", {"Functi
    Info.TeamWhitelist = Value
 end)
 
-Window:Divider("Developer & Credits")
+Window:Divider("Developer")
 
-Window:Button("Arxhiewt", "Click To Copy Discord Username", function()
-   setclipboard("highuntilfailure")
+Window:Button("highuntilfailure / arxhiewt", "Join the server - Copy and paste in google", function()
+   setclipboard("https://discord.gg/RFbM8aAYSz")
 end)
 
 
