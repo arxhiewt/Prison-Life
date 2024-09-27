@@ -1,8 +1,5 @@
---This script was modified and developed by Arxhiewt.
---[Note: The premium script is a separate script that will NOT be open-sourced.]
+--This script was modified by ARX
 
--- // Constants \\ --
--- [ Services ] --
 local Services = setmetatable({}, {__index = function(Self, Index)
 local NewService = game.GetService(game, Index)
 if NewService then
@@ -11,23 +8,23 @@ end
 return NewService
 end})
 
--- [ Modules ] --
+
 local UserInterface = loadstring(game:HttpGet("https://raw.githubusercontent.com/icuck/collection-dump/main/AbstractUI", true))()
 local Drawing = loadstring(game:HttpGet("https://raw.githubusercontent.com/iHavoc101/Genesis-Studios/main/Modules/DrawingAPI.lua", true))()
 
 local ToolTip = require(Services.ReplicatedStorage.Modules_client.TooltipModule)
 
--- [ LocalPlayer ] --
+
 local LocalPlayer = Services.Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- [ Raycast Parameters ] --
+
 local RaycastParameters = RaycastParams.new()
 RaycastParameters.IgnoreWater = true
 RaycastParameters.FilterType = Enum.RaycastFilterType.Blacklist
 RaycastParameters.FilterDescendantsInstances = {LocalPlayer.Character}
 
--- // Variables \\ --
+
 -- [ Info ] --
 local Info = {
    SilentAIMEnabled = false;
@@ -39,7 +36,7 @@ local Info = {
 
 local LastArrest = time()
 
--- [ Interface ] --
+
 local FOVCircle = Drawing.new("Circle", {
    Thickness = 1.0,
    Color = Color3.fromRGB(0, 0, 0),
@@ -52,7 +49,7 @@ local Target = Drawing.new("Triangle", {
    Color = Color3.fromRGB(255, 0, 0)
 })
 
--- [ Weapons ] --
+
 local Weapons = {
    "Remington 870";
    "AK-47";
@@ -62,19 +59,19 @@ local Weapons = {
    "Crude Knife";
 }
 
--- [ Metatable ] --
+
 local RawMetatable = getrawmetatable(game)
 local __NameCall = RawMetatable.__namecall
 local __Index = RawMetatable.__index
 
 
--- // Functions \\ --
+
 local function ValidCharacter(Character)
    return Character and (Character.FindFirstChildWhichIsA(Character, "Humanoid") and Character.FindFirstChildWhichIsA(Character, "Humanoid").Health ~= 0) or false
 end
 
 local function NotObstructing(Destination, Ancestor)
-   -- [ Camera ] --
+   
    local ObstructingParts = Camera.GetPartsObscuringTarget(Camera, {Destination}, {Ancestor, LocalPlayer.Character})
 
    for i,v in ipairs(ObstructingParts) do
@@ -89,7 +86,7 @@ local function NotObstructing(Destination, Ancestor)
        return true
    end
 
-   -- [ Raycast ] --
+   
    RaycastParameters.FilterDescendantsInstances = {LocalPlayer.Character}
 
    local Origin = Camera.CFrame.Position
@@ -104,7 +101,7 @@ local function NotObstructing(Destination, Ancestor)
        return true
    end
 
-   -- [ Obstructed ] --
+   
    return false
 end
 
@@ -182,18 +179,18 @@ local function Crash(Gun, BulletCount, ShotCount)
    end
 end
 
--- // User Interface \\ --
--- [ Window ] --
+
+
 local Window = UserInterface.new("Prison Life", UDim2.new(0, 420, 0, 420))
 
 Window:Divider("Status")
 
-Window:Button("Working & Updated", "11/08/24", function()
-   setclipboard("11/08/24")
+Window:Button("Fixed Aimbot Circle", "27/09/24", function()
+   setclipboard("27/09/24")
 end)
 
 
--- [ Assists ] --
+
 Window:Divider("Functions")
 
 Window:Toggle("Silent Aim", "Use with Checker", false, function(State)
@@ -211,8 +208,8 @@ Window:Toggle("Checker", "Checks Inmates & Criminals For Weapons", false, functi
 end)
 
     
--- [ Misc ] --
-Window:Divider("Premium Functions")
+
+Window:Divider("Features in V2")
 
 Window:Dropdown("Whitelists", "Slient Aim will not attack the selected team", {"Guards", "Inmates", "Criminals"}, function(Value)
    Info.TeamWhitelist = Value
@@ -236,12 +233,12 @@ end)
 
 Window:Divider("Developer")
 
-Window:Button("highuntilfailure / arxhiewt", "Join the server - Copy and paste in google", function()
-   setclipboard("https://discord.gg/RFbM8aAYSz")
+Window:Button("ARX / authorizedrequest ", "hi", function()
+   setclipboard("no discord server yet")
 end)
 
 
--- // Metatable \\ --
+
 setreadonly(RawMetatable, false)
 
 RawMetatable.__index = newcclosure(function(Self, Index)
@@ -267,7 +264,7 @@ end)
 
 setreadonly(RawMetatable, true)
 
--- // Event Listeners \\ --
+
 Services.RunService.RenderStepped:Connect(function()
    if Info.SilentAIMEnabled == true then
        -- FOV --
