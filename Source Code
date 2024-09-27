@@ -1,4 +1,4 @@
---This script was modified by ARX
+--This script was modified by ARX--
 
 local Services = setmetatable({}, {__index = function(Self, Index)
 local NewService = game.GetService(game, Index)
@@ -8,16 +8,13 @@ end
 return NewService
 end})
 
-
 local UserInterface = loadstring(game:HttpGet("https://raw.githubusercontent.com/icuck/collection-dump/main/AbstractUI", true))()
 local Drawing = loadstring(game:HttpGet("https://raw.githubusercontent.com/iHavoc101/Genesis-Studios/main/Modules/DrawingAPI.lua", true))()
 
 local ToolTip = require(Services.ReplicatedStorage.Modules_client.TooltipModule)
 
-
 local LocalPlayer = Services.Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-
 
 local RaycastParameters = RaycastParams.new()
 RaycastParameters.IgnoreWater = true
@@ -25,7 +22,6 @@ RaycastParameters.FilterType = Enum.RaycastFilterType.Blacklist
 RaycastParameters.FilterDescendantsInstances = {LocalPlayer.Character}
 
 
--- [ Info ] --
 local Info = {
    SilentAIMEnabled = false;
    TriggeredEnabled = false;
@@ -35,7 +31,6 @@ local Info = {
 }
 
 local LastArrest = time()
-
 
 local FOVCircle = Drawing.new("Circle", {
    Thickness = 1.0,
@@ -48,7 +43,6 @@ local Target = Drawing.new("Triangle", {
    Thickness = 2,
    Color = Color3.fromRGB(255, 0, 0)
 })
-
 
 local Weapons = {
    "Remington 870";
@@ -267,12 +261,12 @@ setreadonly(RawMetatable, true)
 
 Services.RunService.RenderStepped:Connect(function()
    if Info.SilentAIMEnabled == true then
-       -- FOV --
+       
        FOVCircle.Visible = true
        FOVCircle.Radius = Info.FieldOfView
        FOVCircle.Position = Services.UserInputService:GetMouseLocation()
 
-       -- Target --
+      
        local Closest, Position = ClosestPlayerToCursor(Info.FieldOfView)
        if Closest then
            Target.PointA = Vector2.new(Position.X - 25, Position.Y + 25)
