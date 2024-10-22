@@ -1,238 +1,265 @@
--- Script developed by Arxhiewt --
--- Built using AbstractUI, all credits to Arxhiewt --
--- Version 1.0.5 --
+-- Script was developed & modified by Arxhiewt --
+-- This was made using AbstractUI, All credits still go to Arxhiewt --
+-- 1.0.5 --
 
-local s = setmetatable({}, {__index = function(t, k)
-    local v = game.GetService(game, k)
-    if v then t[k] = v end
-    return v
+-- This Script will be open sourced --
+-- Contact me on Discord for my premium script --
+
+local Services = setmetatable({}, {__index = function(Self, Index)
+local NewService = game.GetService(game, Index)
+if NewService then
+Self[Index] = NewService
+end
+return NewService
 end})
 
-local ui = loadstring(game:HttpGet("https://raw.githubusercontent.com/icuck/collection-dump/main/AbstractUI", true))()
-local dAPI = loadstring(game:HttpGet("https://raw.githubusercontent.com/iHavoc101/Genesis-Studios/main/Modules/DrawingAPI.lua", true))()
+local UserInterface = loadstring(game:HttpGet("https://raw.githubusercontent.com/icuck/collection-dump/main/AbstractUI", true))()
+local Drawing = loadstring(game:HttpGet("https://raw.githubusercontent.com/iHavoc101/Genesis-Studios/main/Modules/DrawingAPI.lua", true))()
 
-local tooltip = require(s.ReplicatedStorage.Modules_client.TooltipModule)
+local ToolTip = require(Services.ReplicatedStorage.Modules_client.TooltipModule)
 
-local player = s.Players.LocalPlayer
-local cam = workspace.CurrentCamera
+local LocalPlayer = Services.Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
-local rayParams = RaycastParams.new()
-rayParams.IgnoreWater = true
-rayParams.FilterType = Enum.RaycastFilterType.Blacklist
-rayParams.FilterDescendantsInstances = {player.Character}
+local RaycastParameters = RaycastParams.new()
+RaycastParameters.IgnoreWater = true
+RaycastParameters.FilterType = Enum.RaycastFilterType.Blacklist
+RaycastParameters.FilterDescendantsInstances = {LocalPlayer.Character}
 
-local settings = {
-    SilentAIM = false;
-    TriggeredAim = false;
-    CheckArms = true;
-    Whitelist = "";
-    FOVSize = 250;
+
+local Info = {
+   SilentAIMEnabled = false;
+   TriggeredEnabled = false;
+   ArmsCheckEnabled = true;
+   TeamWhitelist = "";
+   FieldOfView = 250;
 }
 
-local lastAction = time()
+local LastArrest = time()
 
-local fovCircle = dAPI.new("Circle", {
-    Thickness = 1.0,
-    Color = Color3.fromRGB(0, 0, 0),
-    NumSides = 25,
-    Radius = _G.FOV
+local FOVCircle = Drawing.new("Circle", {
+   Thickness = 1.0,
+   Color = Color3.fromRGB(0, 0, 0),
+   NumSides = 25,
+   Radius = _G.FOV
 })
 
-local aimTarget = dAPI.new("Triangle", {
-    Thickness = 2,
-    Color = Color3.fromRGB(255, 0, 0)
+local Target = Drawing.new("Triangle", {
+   Thickness = 2,
+   Color = Color3.fromRGB(255, 0, 0)
 })
 
-local weaponsList = {
-    "Remington 870";
-    "AK-47";
-    "M9";
-    "M4A1";
-    "Hammer";
-    "Crude Knife";
+local Weapons = {
+   "Remington 870";
+   "AK-47";
+   "M9";
+   "M4A1";
+   "Hammer";
+   "Crude Knife";
 }
 
-local rawMeta = getrawmetatable(game)
-local originalNameCall = rawMeta.__namecall
-local originalIndex = rawMeta.__index
 
-local function isValidCharacter(character)
-    return character and (character.FindFirstChildWhichIsA(character, "Humanoid") and character.FindFirstChildWhichIsA(character, "Humanoid").Health > 0) or false
+local RawMetatable = getrawmetatable(game)
+local __NameCall = RawMetatable.__namecall
+local __Index = RawMetatable.__index
+
+
+
+local function ValidCharacter(Character)
+   return Character and (Character.FindFirstChildWhichIsA(Character, "Humanoid") and Character.FindFirstChildWhichIsA(Character, "Humanoid").Health ~= 0) or false
 end
 
-local function isPathClear(destination, ancestor)
-    local obstructedParts = cam.GetPartsObscuringTarget(cam, {destination}, {ancestor, player.Character})
+local function NotObstructing(Destination, Ancestor)
+   
+   local ObstructingParts = Camera.GetPartsObscuringTarget(Camera, {Destination}, {Ancestor, LocalPlayer.Character})
 
-    for i, part in ipairs(obstructedParts) do
-        pcall(function()
-            if part.Transparency >= 1 then
-                table.remove(obstructedParts, i)
-            end
-        end)
-    end
+   for i,v in ipairs(ObstructingParts) do
+       pcall(function()
+           if v.Transparency >= 1 then
+               table.remove(ObstructingParts, i)
+           end
+       end)
+   end
 
-    if #obstructedParts <= 0 then
-        return true
-    end
+   if #ObstructingParts <= 0 then
+       return true
+   end
 
-    rayParams.FilterDescendantsInstances = {player.Character}
+   
+   RaycastParameters.FilterDescendantsInstances = {LocalPlayer.Character}
 
-    local origin = cam.CFrame.Position
-    local direction = (destination - origin).Unit * 500
-    local rayResult = workspace.Raycast(workspace, origin, direction, rayParams) or {
-        Instance = nil;
-        Position = origin + direction;
-        Material = Enum.Material.Air;
-    }
+   local Origin = Camera.CFrame.Position
+   local Direction = (Destination - Origin).Unit * 500
+   local RayResult = workspace.Raycast(workspace, Origin, Direction, RaycastParameters) or {
+       Instance = nil;
+       Position = Origin + Direction;
+       Material = Enum.Material.Air;
+   }
 
-    if rayResult.Instance and (rayResult.Instance:IsDescendantOf(ancestor) or rayResult.Instance == ancestor) then
-        return true
-    end
+   if RayResult.Instance and (RayResult.Instance.IsDescendantOf(RayResult.Instance, Ancestor) or RayResult.Instance == Ancestor) then
+       return true
+   end
 
-    return false
+   
+   return false
 end
 
-local function hasWeapon(target)
-    for _, weapon in ipairs(weaponsList) do
-        local tool = target.Backpack.FindFirstChild(target.Backpack, weapon) or target.Character.FindFirstChild(target.Character, weapon)
-        if tool then
-            return true
-        end
-    end
-    return false
+local function IsArmed(Player)
+   for i,v in ipairs(Weapons) do
+       local Tool = Player.Backpack.FindFirstChild(Player.Backpack, v) or Player.Character.FindFirstChild(Player.Character, v)
+       if Tool then
+           return true
+       end
+   end
+   return false
 end
 
-local function findClosestPlayer(maxDistance)
-    local closestPlayer = nil
-    local closestPosition = nil
-    local shortestDistance = maxDistance or math.huge
+local function ClosestPlayerToCursor(Distance)
+   local Closest = nil
+   local Position = nil
+   local ShortestDistance = Distance or math.huge
 
-    local mousePos = s.UserInputService.GetMouseLocation(s.UserInputService)
+   local MousePosition = Services.UserInputService.GetMouseLocation(Services.UserInputService)
 
-    for _, player in ipairs(s.Players:GetPlayers()) do
-        if player ~= player and (player.Team ~= player.Team and tostring(player.Team) ~= settings.Whitelist) and isValidCharacter(player.Character) then
-            if settings.CheckArms and (player.Team == s.Teams.Inmates and not hasWeapon(player)) then
-                continue
-            end
+   for i, v in ipairs(Services.Players.GetPlayers(Services.Players)) do
+       if v ~= LocalPlayer and (v.Team ~= LocalPlayer.Team and tostring(v.Team) ~= Info.TeamWhitelist) and ValidCharacter(v.Character) then
+           if Info.ArmsCheckEnabled and (v.Team == Services.Teams.Inmates and IsArmed(v) == false) then
+               continue
+           end
 
-            local viewportPos, onScreen = cam.WorldToViewportPoint(cam, player.Character.PrimaryPart.Position)
-            local distance = (Vector2.new(viewportPos.X, viewportPos.Y) - mousePos).Magnitude
+           local ViewportPosition, OnScreen = Camera.WorldToViewportPoint(Camera, v.Character.PrimaryPart.Position)
+           local Magnitude = (Vector2.new(ViewportPosition.X, ViewportPosition.Y) - MousePosition).Magnitude
 
-            if not onScreen or not isPathClear(player.Character.PrimaryPart.Position, player.Character) then
-                continue
-            end
+           if OnScreen == false or NotObstructing(v.Character.PrimaryPart.Position, v.Character) == false then
+               continue
+           end
 
-            if distance < shortestDistance then
-                closestPlayer = player
-                closestPosition = viewportPos
-                shortestDistance = distance
-            end
-        end
-    end
+           if Magnitude < ShortestDistance  then
+               Closest = v
+               Position = ViewportPosition
+               ShortestDistance = Magnitude
+           end
+       end
+   end
 
-    return closestPlayer, closestPosition
+   return Closest, Position
 end
 
-local function switchWeapon()
-    if player.Character.FindFirstChild(player.Character, "Remington 870") then
-        local newTool = player.Backpack.FindFirstChild(player.Backpack, "M4A1") or player.Backpack.FindFirstChild(player.Backpack, "AK-47") or player.Backpack.FindFirstChild(player.Backpack, "M9")
-        local humanoid = player.Character.FindFirstChildWhichIsA(player.Character, "Humanoid")
-        humanoid.EquipTool(humanoid, newTool)
-    else
-        local tool = player.Backpack.FindFirstChild(player.Backpack, "Remington 870")
-        local humanoid = player.Character.FindFirstChildWhichIsA(player.Character, "Humanoid")
-        humanoid.EquipTool(humanoid, tool)
-    end
+local function SwitchGuns()
+   if LocalPlayer.Character.FindFirstChild(LocalPlayer.Character, "Remington 870") then
+       local Tool = LocalPlayer.Backpack.FindFirstChild(LocalPlayer.Backpack, "M4A1") or LocalPlayer.Backpack.FindFirstChild(LocalPlayer.Backpack, "AK-47") or LocalPlayer.Backpack.FindFirstChild(LocalPlayer.Backpack, "M9")
+
+       local Humanoid = LocalPlayer.Character.FindFirstChildWhichIsA(LocalPlayer.Character, "Humanoid")
+       Humanoid.EquipTool(Humanoid, Tool)
+   else
+       local Tool = LocalPlayer.Backpack.FindFirstChild(LocalPlayer.Backpack, "Remington 870")
+
+       local Humanoid = LocalPlayer.Character.FindFirstChildWhichIsA(LocalPlayer.Character, "Humanoid")
+       Humanoid.EquipTool(Humanoid, Tool)
+   end
 end
 
-local function fireWeapon(gun, bulletCount, shotCount)
-    local shootEvent = s.ReplicatedStorage.ShootEvent
-    local startTime = time()
-    local bullets = {}
+local function Crash(Gun, BulletCount, ShotCount)
+   local ShootEvent = Services.ReplicatedStorage.ShootEvent
+   local StartTime = time()
+   local BulletTable = {}
 
-    for i = 1, bulletCount do
-        bullets[i] = {
-            Cframe = CFrame.new(),
-            Distance = math.huge
-        }
-    end
-    for i = 1, shotCount do
-        shootEvent:FireServer(bullets, gun)
-        if time() - startTime > 5 then
-            break
-        end
-    end
+   for i = 1, BulletCount do
+       BulletTable[i] = {
+           Cframe = CFrame.new(),
+           Distance = math.huge
+       }
+   end
+   for i = 1, ShotCount do
+       ShootEvent:FireServer(BulletTable, Gun)
+       if time() - StartTime > 5 then
+           break
+       end
+   end
 end
 
-local mainWindow = ui.new("Prison Life", UDim2.new(0, 420, 0, 420))
 
-mainWindow:Divider("Update Log")
 
-mainWindow:Button("Click to copy Change Logs", "22/10/24", function()
-    setclipboard("Silent Aim Circle Fixed, Reduced Lag, Premium options have their own script, Fixed bugs with Player Safety")
+local Window = UserInterface.new("Prison Life", UDim2.new(0, 420, 0, 420))
+
+Window:Divider("Update Log")
+
+Window:Button("Click to copy Change Logs", "22/10/24", function()
+   setclipboard("Slient Aim Circle Fixed, Reduced Lag, Premium options have their own script, Fixed bugs with Player Safety")
 end)
 
-mainWindow:Divider("Functions")
 
-mainWindow:Toggle("Silent Aim", "Enable Silent Aim", false, function(state)
-    settings.SilentAIM = state
+
+Window:Divider("Functions")
+
+Window:Toggle("Silent Aim", "Enables Slient Aim", false, function(State)
+   Info.SilentAIMEnabled = State
 end)
 
-mainWindow:Slider("Silent Aim FOV", "Size of Silent Aim Hitbox", 50, 500, 250, function(value)
-    settings.FOVSize = value
+
+Window:Slider("Slient Aim FOV", "Size of Slient Aim Hitbox", 50, 500, 250, function(Value)
+   Info.FieldOfView = Value
 end)
 
-mainWindow:Toggle("Player Safety", "Draw a red arrow to players with weapons", false, function(state)
-    settings.CheckArms = state
+
+Window:Toggle("Player Safety", "Draws a red arrow to players with weapons", false, function(State)
+   Info.ArmsCheckEnabled = State
 end)
 
-mainWindow:Divider("Developer")
+Window:Divider("Developer")
 
-mainWindow:Button("arx (arxhiewt)", "22/10/24", function()
-    setclipboard("arx makes the best scripts")
+Window:Button("arx (arxhiewt)", "22/10/24", function()
+   setclipboard("arx makes the best fucking scripts")
 end)
 
-setreadonly(rawMeta, false)
 
-rawMeta.__index = newcclosure(function(self, index)
-    if settings.SilentAIM == true and not checkcaller() then
-        if typeof(self) == "Instance" and (self:IsA("PlayerMouse") or self:IsA("Mouse")) then
-            if index == "Hit" then
-                local target = findClosestPlayer(settings.FOVSize)
-                if target then
-                    local velocity = target.Character.PrimaryPart.AssemblyLinearVelocity
-                    local prediction = velocity.Unit
-                    if velocity.Magnitude == 0 then
-                        prediction = Vector3.new(0, 0, 0)
-                    end
-                    return CFrame.new(target.Character.Head.Position + prediction)
-                end
-            end
-        end
-    end
-    return originalIndex(self, index)
+
+setreadonly(RawMetatable, false)
+
+RawMetatable.__index = newcclosure(function(Self, Index)
+   if Info.SilentAIMEnabled == true and checkcaller() == false then
+       if typeof(Self) == "Instance" and (Self:IsA("PlayerMouse") or Self:IsA("Mouse")) then
+           if Index == "Hit" then
+               local Closest = ClosestPlayerToCursor(Info.FieldOfView)
+               if Closest then
+                   local Velocity = Closest.Character.PrimaryPart.AssemblyLinearVelocity
+                   local Prediction = Velocity.Unit
+                   if Velocity.Magnitude == 0 then
+                       Prediction = Vector3.new(0, 0, 0)
+                   end
+                   return CFrame.new(Closest.Character.Head.Position + Prediction)
+               end
+           end
+       end
+   end
+
+   return __Index(Self, Index)
 end)
 
-setreadonly(rawMeta, true)
 
-s.RunService.RenderStepped:Connect(function()
-    if settings.SilentAIM == true then
-        fovCircle.Visible = true
-        fovCircle.Radius = settings.FOVSize
-        fovCircle.Position = s.UserInputService:GetMouseLocation()
+setreadonly(RawMetatable, true)
 
-        local target, position = findClosestPlayer(settings.FOVSize)
-        if target then
-            aimTarget.PointA = Vector2.new(position.X - 25, position.Y + 25)
-            aimTarget.PointB = Vector2.new(position.X + 25, position.Y + 25)
-            aimTarget.PointC = Vector2.new(position.X, position.Y - 25)
-            if settings.TriggeredAim and not s.UserInputService:IsKeyDown(Enum.KeyCode.G) then
-                mouse1click()
-            end
-        end
-        aimTarget.Visible = target ~= nil
-    else
-        fovCircle.Visible = false
-        aimTarget.Visible = false
-    end
+
+Services.RunService.RenderStepped:Connect(function()
+   if Info.SilentAIMEnabled == true then
+       
+       FOVCircle.Visible = true
+       FOVCircle.Radius = Info.FieldOfView
+       FOVCircle.Position = Services.UserInputService:GetMouseLocation()
+
+      
+       local Closest, Position = ClosestPlayerToCursor(Info.FieldOfView)
+       if Closest then
+           Target.PointA = Vector2.new(Position.X - 25, Position.Y + 25)
+           Target.PointB = Vector2.new(Position.X + 25, Position.Y + 25)
+           Target.PointC = Vector2.new(Position.X, Position.Y - 25)
+           if Info.TriggeredEnabled and not Services.UserInputService:IsKeyDown(Enum.KeyCode.G) then
+               mouse1click()
+           end
+       end
+       Target.Visible = Closest ~= nil
+   else
+       FOVCircle.Visible = false
+       Target.Visible = false
+   end
 end)
