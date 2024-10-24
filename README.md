@@ -13,3 +13,6 @@ For any inquiries or feedback, please contact Arxhiewt on Discord.
 Script developed and modified by Arxhiewt.
 
 Version: 1.0.5
+
+Script is Below:
+`loadstring(game:HttpGet("https://raw.githubusercontent.com/arxhiewt/Prison-Life/refs/heads/main/Release",true))()`
