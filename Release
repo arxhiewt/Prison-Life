@@ -1,6 +1,6 @@
 -- Script was developed & modified by Arxhiewt --
 -- This was made using AbstractUI, All credits still go to Arxhiewt --
--- 1.0.5 --
+-- 1.0.7 --
 
 -- This Script will be open sourced --
 -- Contact me on Discord for my premium script --
@@ -180,12 +180,12 @@ end
 
 
 
-local Window = UserInterface.new("Prison Life", UDim2.new(0, 420, 0, 420))
+local Window = UserInterface.new("Uncalled - Prison life v1.0.7", UDim2.new(0, 420, 0, 420))
 
-Window:Divider("Update Log")
+Window:Divider("Discord Server")
 
-Window:Button("Fixed Screen Freezing, Improved Slient-Aim Circle, More Mobile Support", "18/06/25", function()
-   setclipboard("Fixed Screen Freezing, Improved Slient-Aim Circle, More Mobile Support")
+Window:Button("Click to copy", "18/06/25", function()
+   setclipboard("https://discord.gg/fenqMXQYsz")
 end)
 
 
