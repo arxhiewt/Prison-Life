@@ -184,8 +184,8 @@ local Window = UserInterface.new("Prison Life", UDim2.new(0, 420, 0, 420))
 
 Window:Divider("Update Log")
 
-Window:Button("Click to copy Change Logs", "22/10/24", function()
-   setclipboard("Slient Aim Circle Fixed, Reduced Lag, Premium options have their own script, Fixed bugs with Player Safety")
+Window:Button("Fixed Screen Freezing, Improved Slient-Aim Circle, More Mobile Support", "18/06/25", function()
+   setclipboard("Fixed Screen Freezing, Improved Slient-Aim Circle, More Mobile Support")
 end)
 
 
@@ -208,8 +208,8 @@ end)
 
 Window:Divider("Developer")
 
-Window:Button("arx (arxhiewt)", "22/10/24", function()
-   setclipboard("arx makes the best fucking scripts")
+Window:Button("@arxhiewt", "18/06/25", function()
+   setclipboard("arxhiewt")
 end)
 
 
